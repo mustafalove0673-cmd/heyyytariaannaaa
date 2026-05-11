@@ -4,873 +4,260 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ariana</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
-:root {
-  --bg: #ffffff;
-  --black: #0a0a0a;
-  --gray: #1a1a1a;
-  --yellow: #facc15;
-  --yellow-bright: #ffea00;
-  --yellow-dim: #facc15;
-  --neon-glow: 0 0 20px rgba(250, 204, 21, 0.4), 0 0 60px rgba(250, 204, 21, 0.15);
-  --text: #0a0a0a;
-  --text-dim: #666666;
-}
-
-html { font-size: 16px; }
+html, body { width: 100%; height: 100vh; overflow: hidden; background: #ffffff; }
 
 body {
-  font-family: 'Space Grotesk', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* Pattern overlay */
+/* Neon yellow diagonal lines pattern */
 body::before {
   content: '';
   position: fixed;
   inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  background-image:
-    linear-gradient(45deg, rgba(0,0,0,0.02) 25%, transparent 25%),
-    linear-gradient(-45deg, rgba(0,0,0,0.02) 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, rgba(0,0,0,0.02) 75%),
-    linear-gradient(-45deg, transparent 75%, rgba(0,0,0,0.02) 75%);
-  background-size: 40px 40px;
-  background-position: 0 0, 0 20px, 20px -20px, -20px 0px;
-}
-
-/* Diagonal stripe pattern */
-body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
   z-index: 0;
   background: repeating-linear-gradient(
     -45deg,
     transparent,
-    transparent 20px,
-    rgba(250, 204, 21, 0.04) 20px,
-    rgba(250, 204, 21, 0.04) 21px
+    transparent 30px,
+    rgba(250, 204, 21, 0.15) 30px,
+    rgba(250, 204, 21, 0.15) 31px
   );
 }
 
-/* ===== HEADER ===== */
-.header {
-  position: relative;
-  z-index: 10;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.5rem 3rem;
-  border-bottom: 2px solid var(--black);
-  background: var(--bg);
-  max-width: 1400px;
-  margin: 0 auto;
-}
-
-.brand {
-  font-size: 1.1rem;
-  font-weight: 700;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--black);
-}
-
-.brand span {
-  color: var(--yellow-bright);
-  -webkit-text-stroke: 1px var(--black);
-  text-stroke: 1px var(--black);
-}
-
-.header-center {
-  display: flex;
-  gap: 2rem;
-}
-
-.header-center a {
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  text-decoration: none;
-  color: var(--text-dim);
-  transition: color 0.2s;
-  padding: 0.25rem 0;
-  position: relative;
-}
-
-.header-center a::after {
+body::after {
   content: '';
-  position: absolute;
-  bottom: -2px;
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 60px,
+    rgba(250, 204, 21, 0.08) 60px,
+    rgba(250, 204, 21, 0.08) 61px
+  );
+}
+
+/* Grid dots pattern */
+.grid-dots {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  background-image: radial-gradient(circle, rgba(10,10,10,0.12) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* Solid neon diagonal lines - thick */
+.thick-lines {
+  position: fixed;
+  inset: 0;
+  z-index: 3;
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 100px,
+    rgba(250, 204, 21, 0.25) 100px,
+    rgba(250, 204, 21, 0.25) 102px
+  );
+}
+
+/* Small checkerboard overlay */
+.checker {
+  position: fixed;
+  inset: 0;
+  z-index: 4;
+  background-image:
+    linear-gradient(45deg, rgba(10,10,10,0.03) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(10,10,10,0.03) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(10,10,10,0.03) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(10,10,10,0.03) 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+}
+
+/* Heavy neon right-side gradient */
+.neon-wash {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  background: linear-gradient(
+    135deg,
+    transparent 50%,
+    rgba(250, 204, 21, 0.12) 100%
+  );
+  pointer-events: none;
+}
+
+/* Black border frame */
+.frame {
+  position: fixed;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.frame-t { top: 0; left: 0; right: 0; height: 6px; background: #0a0a0a; }
+.frame-b { bottom: 0; left: 0; right: 0; height: 6px; background: #0a0a0a; }
+.frame-l { top: 0; left: 0; bottom: 0; width: 6px; background: #0a0a0a; }
+.frame-r { top: 0; right: 0; bottom: 0; width: 6px; background: #0a0a0a; }
+
+/* Corner accents */
+.corner {
+  position: fixed;
+  z-index: 21;
+  width: 40px;
+  height: 40px;
+}
+.corner-tl { top: 20px; left: 20px; border-top: 3px solid #facc15; border-left: 3px solid #facc15; }
+.corner-tr { top: 20px; right: 20px; border-top: 3px solid #facc15; border-right: 3px solid #facc15; }
+.corner-bl { bottom: 20px; left: 20px; border-bottom: 3px solid #facc15; border-left: 3px solid #facc15; }
+.corner-br { bottom: 20px; right: 20px; border-bottom: 3px solid #facc15; border-right: 3px solid #facc15; }
+
+/* Floating geometric shapes */
+.shape {
+  position: fixed;
+  z-index: 6;
+  border: 2px solid #0a0a0a;
+  opacity: 0.08;
+  pointer-events: none;
+}
+
+.shape-1 {
+  top: 8%;
+  right: 12%;
+  width: 120px;
+  height: 120px;
+  transform: rotate(30deg);
+  border-color: #facc15;
+  opacity: 0.15;
+}
+
+.shape-2 {
+  bottom: 15%;
+  left: 8%;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  border-color: #0a0a0a;
+}
+
+.shape-3 {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(45deg);
+  width: 400px;
+  height: 400px;
+  border-width: 1px;
+  border-color: #facc15;
+  opacity: 0.06;
+}
+
+.shape-4 {
+  top: 20%;
+  left: 30%;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border-color: #facc15;
+  opacity: 0.12;
+}
+
+.shape-5 {
+  bottom: 30%;
+  right: 20%;
+  width: 80px;
+  height: 80px;
+  transform: rotate(15deg);
+  border-color: #0a0a0a;
+  opacity: 0.06;
+}
+
+/* Horizontal divider lines */
+.divider {
+  position: fixed;
+  z-index: 7;
   left: 0;
-  width: 100%;
-  height: 2px;
-  background: var(--yellow-bright);
-  transform: scaleX(0);
-  transition: transform 0.2s;
+  right: 0;
+  height: 1px;
+  background: rgba(10,10,10,0.06);
+  pointer-events: none;
 }
+.divider-1 { top: 25%; }
+.divider-2 { top: 50%; }
+.divider-3 { top: 75%; }
 
-.header-center a:hover {
-  color: var(--black);
+/* Vertical divider lines */
+.vdivider {
+  position: fixed;
+  z-index: 7;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(10,10,10,0.04);
+  pointer-events: none;
 }
+.vdivider-1 { left: 25%; }
+.vdivider-2 { left: 50%; }
+.vdivider-3 { left: 75%; }
 
-.header-center a:hover::after {
-  transform: scaleX(1);
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-}
-
-.status-badge {
-  font-size: 0.65rem;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--text-dim);
-  padding: 0.4rem 1rem;
-  border: 1.5px solid var(--black);
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.status-dot {
-  width: 6px;
-  height: 6px;
+/* Animated pulsing neon dot */
+.pulse-dot {
+  position: fixed;
+  z-index: 10;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
-  background: var(--text-dim);
+  background: #facc15;
+  pointer-events: none;
+  animation: pulse-me 3s ease-in-out infinite;
 }
 
-.status-dot.active {
-  background: var(--yellow-bright);
-  animation: dot-pulse 1s ease-in-out infinite;
-}
+.pulse-dot-1 { top: 25%; right: 25%; }
+.pulse-dot-2 { bottom: 35%; left: 20%; animation-delay: 1s; }
+.pulse-dot-3 { top: 60%; right: 15%; animation-delay: 2s; }
 
-@keyframes dot-pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.3; transform: scale(0.6); }
-}
-
-/* ===== CLOCK ===== */
-.clock-section {
-  position: relative;
-  z-index: 10;
-  display: flex;
-  justify-content: center;
-  padding: 2rem 3rem 0;
-  max-width: 1400px;
-  margin: 0 auto;
-}
-
-.clock-block {
-  text-align: center;
-}
-
-.time-display {
-  font-size: clamp(4rem, 10vw, 7rem);
-  font-weight: 900;
-  letter-spacing: 0.08em;
-  line-height: 1;
-  color: var(--black);
-}
-
-.time-display span {
-  color: var(--yellow-bright);
-  -webkit-text-stroke: 1.5px var(--black);
-  text-stroke: 1.5px var(--black);
-}
-
-.date-display {
-  font-size: 0.75rem;
-  font-weight: 500;
-  letter-spacing: 0.25em;
-  text-transform: uppercase;
-  color: var(--text-dim);
-  margin-top: 0.25rem;
-}
-
-/* ===== MAIN ===== */
-.main {
-  position: relative;
-  z-index: 10;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem 2rem 2rem;
-  max-width: 1400px;
-  margin: 0 auto;
-  min-height: calc(100vh - 220px);
-}
-
-/* ===== ROBOT ===== */
-.robot-section {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-}
-
-.robot-container {
-  position: relative;
-  width: clamp(180px, 25vw, 300px);
-  height: clamp(220px, 30vw, 360px);
-  cursor: pointer;
-}
-
-.robot-container svg {
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-
-.robot-container .robot-body {
-  animation: breath 4s ease-in-out infinite;
-}
-
-@keyframes breath {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.015); }
-}
-
-/* Eye glow */
-.eye-pupil {
-  transition: cx 0.1s, cy 0.1s;
-}
-
-/* Voice waves */
-.voice-waves {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
-  height: 30px;
-  margin-top: 0.5rem;
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-
-.voice-waves.active { opacity: 1; }
-
-.voice-wave {
-  width: 3px;
-  background: var(--black);
-  border-radius: 2px;
-  animation: wave 0.4s ease-in-out infinite alternate;
-}
-
-.voice-waves.active .voice-wave { background: var(--yellow-bright); }
-
-.voice-wave:nth-child(1) { height: 20%; animation-delay: 0s; }
-.voice-wave:nth-child(2) { height: 50%; animation-delay: 0.08s; }
-.voice-wave:nth-child(3) { height: 90%; animation-delay: 0.16s; }
-.voice-wave:nth-child(4) { height: 60%; animation-delay: 0.12s; }
-.voice-wave:nth-child(5) { height: 30%; animation-delay: 0.04s; }
-.voice-wave:nth-child(6) { height: 70%; animation-delay: 0.2s; }
-.voice-wave:nth-child(7) { height: 40%; animation-delay: 0.1s; }
-.voice-wave:nth-child(8) { height: 80%; animation-delay: 0.18s; }
-.voice-wave:nth-child(9) { height: 25%; animation-delay: 0.06s; }
-.voice-wave:nth-child(10) { height: 55%; animation-delay: 0.14s; }
-.voice-wave:nth-child(11) { height: 65%; animation-delay: 0.22s; }
-.voice-wave:nth-child(12) { height: 35%; animation-delay: 0.02s; }
-
-@keyframes wave {
-  0% { transform: scaleY(0.4); }
-  100% { transform: scaleY(1); }
-}
-
-/* Name */
-.ariana-name {
-  font-size: clamp(2.5rem, 6vw, 4.5rem);
-  font-weight: 900;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--black);
-  line-height: 1;
-}
-
-.ariana-name span {
-  color: var(--yellow-bright);
-  -webkit-text-stroke: 1.5px var(--black);
-  text-stroke: 1.5px var(--black);
-}
-
-.ariana-subtitle {
-  font-size: 0.65rem;
-  font-weight: 500;
-  letter-spacing: 0.35em;
-  text-transform: uppercase;
-  color: var(--text-dim);
-}
-
-/* Transcript box */
-.transcript-box {
-  margin-top: 1rem;
-  max-width: 440px;
-  width: 100%;
-  padding: 0.85rem 1.2rem;
-  border: 1.5px solid var(--black);
-  background: var(--bg);
-  text-align: center;
-  font-size: 0.8rem;
-  font-weight: 400;
-  color: var(--text-dim);
-  min-height: 44px;
-  position: relative;
-  transition: all 0.2s;
-}
-
-.transcript-box.active {
-  border-color: var(--yellow-bright);
-  color: var(--black);
-}
-
-.transcript-box .listening-indicator {
-  display: none;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  margin-bottom: 0.4rem;
-  font-size: 0.6rem;
-  font-weight: 600;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--yellow-bright);
-}
-
-.transcript-box.listening .listening-indicator {
-  display: flex;
-}
-
-.transcript-placeholder {
-  opacity: 0.4;
-  font-style: italic;
-}
-
-/* Mic button */
-.mic-button {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  border: 2px solid var(--black);
-  background: var(--bg);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-  margin-top: 0.75rem;
-}
-
-.mic-button:hover {
-  background: var(--black);
-}
-
-.mic-button:hover svg {
-  color: var(--yellow-bright);
-}
-
-.mic-button svg {
-  width: 22px;
-  height: 22px;
-  color: var(--black);
-  transition: color 0.2s;
-}
-
-.mic-button.listening {
-  background: var(--black);
-  border-color: var(--yellow-bright);
-  animation: mic-pulse 1.5s ease-in-out infinite;
-}
-
-.mic-button.listening svg {
-  color: var(--yellow-bright);
-}
-
-@keyframes mic-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.3); }
-  50% { box-shadow: 0 0 0 12px transparent; }
-}
-
-/* Hint buttons */
-.interaction-hints {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 1rem;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-.hint-btn {
-  padding: 0.5rem 1rem;
-  border: 1.5px solid var(--black);
-  background: var(--bg);
-  color: var(--text);
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 0.7rem;
-  font-weight: 500;
-  letter-spacing: 0.05em;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.hint-btn:hover {
-  background: var(--black);
-  color: var(--yellow-bright);
-}
-
-.hint-btn.primary {
-  background: var(--black);
-  color: var(--yellow-bright);
-  border-color: var(--yellow-bright);
-}
-
-.hint-btn.primary:hover {
-  background: var(--yellow-bright);
-  color: var(--black);
-  border-color: var(--black);
-}
-
-/* Footer */
-.footer {
-  position: relative;
-  z-index: 10;
-  text-align: center;
-  padding: 1.5rem;
-  font-size: 0.65rem;
-  font-weight: 500;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--text-dim);
-  border-top: 1px solid rgba(0,0,0,0.06);
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .header {
-    flex-direction: column;
-    gap: 0.75rem;
-    padding: 1rem;
-  }
-  .header-center {
-    gap: 1rem;
-  }
-  .header-right {
-    gap: 0.75rem;
-  }
-  .clock-section {
-    padding: 1.5rem 1rem 0;
-  }
-  .main {
-    padding: 0.5rem 1rem 1.5rem;
-    min-height: auto;
-  }
-  .robot-container {
-    width: clamp(150px, 50vw, 200px);
-    height: clamp(180px, 60vw, 240px);
-  }
-  .interaction-hints {
-    gap: 0.35rem;
-  }
-  .hint-btn {
-    font-size: 0.6rem;
-    padding: 0.4rem 0.75rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .header-center {
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-  .time-display {
-    font-size: clamp(2.5rem, 15vw, 4rem);
-  }
+@keyframes pulse-me {
+  0%, 100% { opacity: 0.2; transform: scale(1); box-shadow: none; }
+  50% { opacity: 1; transform: scale(1.8); box-shadow: 0 0 30px rgba(250, 204, 21, 0.6); }
 }
 </style>
 </head>
 <body>
+<div class="grid-dots"></div>
+<div class="thick-lines"></div>
+<div class="checker"></div>
+<div class="neon-wash"></div>
 
-<!-- Header -->
-<header class="header">
-  <div class="brand">Ariana<span>.</span></div>
-  <nav class="header-center">
-    <a href="#">Ana Sayfa</a>
-    <a href="#">Hakkında</a>
-    <a href="#">Özellikler</a>
-    <a href="#">İletişim</a>
-  </nav>
-  <div class="header-right">
-    <div class="status-badge">
-      <span class="status-dot" id="statusDot"></span>
-      <span id="statusText">Beklemede</span>
-    </div>
-  </div>
-</header>
+<div class="frame frame-t"></div>
+<div class="frame frame-b"></div>
+<div class="frame frame-l"></div>
+<div class="frame frame-r"></div>
 
-<!-- Clock -->
-<div class="clock-section">
-  <div class="clock-block">
-    <div class="time-display" id="timeDisplay"><span>00</span>:00</div>
-    <div class="date-display" id="dateDisplay"></div>
-  </div>
-</div>
+<div class="corner corner-tl"></div>
+<div class="corner corner-tr"></div>
+<div class="corner corner-bl"></div>
+<div class="corner corner-br"></div>
 
-<!-- Main -->
-<main class="main">
-  <div class="robot-section">
-    <div class="robot-container" id="robotContainer">
-      <svg viewBox="0 0 300 360" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <!-- Outer frame -->
-        <rect x="50" y="40" width="200" height="260" rx="20" stroke="#0a0a0a" stroke-width="2.5" fill="none"/>
-        <rect x="58" y="48" width="184" height="244" rx="16" stroke="#0a0a0a" stroke-width="0.5" fill="none" opacity="0.3"/>
+<div class="divider divider-1"></div>
+<div class="divider divider-2"></div>
+<div class="divider divider-3"></div>
+<div class="vdivider vdivider-1"></div>
+<div class="vdivider vdivider-2"></div>
+<div class="vdivider vdivider-3"></div>
 
-        <!-- Corner accents -->
-        <rect x="50" y="40" width="40" height="40" rx="20" fill="#0a0a0a"/>
-        <rect x="210" y="40" width="40" height="40" rx="20" fill="#0a0a0a"/>
-        <rect x="50" y="260" width="40" height="40" rx="20" fill="#0a0a0a"/>
-        <rect x="210" y="260" width="40" height="40" rx="20" fill="#0a0a0a"/>
+<div class="shape shape-1"></div>
+<div class="shape shape-2"></div>
+<div class="shape shape-3"></div>
+<div class="shape shape-4"></div>
+<div class="shape shape-5"></div>
 
-        <circle cx="70" cy="60" r="4" fill="#facc15"/>
-        <circle cx="230" cy="60" r="4" fill="#facc15"/>
-        <circle cx="70" cy="280" r="4" fill="#facc15"/>
-        <circle cx="230" cy="280" r="4" fill="#facc15"/>
-
-        <!-- Antenna -->
-        <line x1="150" y1="20" x2="150" y2="40" stroke="#0a0a0a" stroke-width="2"/>
-        <circle cx="150" cy="14" r="5" stroke="#0a0a0a" stroke-width="2" fill="#facc15">
-          <animate attributeName="r" values="5;7;5" dur="2s" repeatCount="indefinite"/>
-        </circle>
-
-        <!-- Face plate -->
-        <rect x="80" y="70" width="140" height="170" rx="12" fill="#ffffff" stroke="#0a0a0a" stroke-width="2"/>
-
-        <!-- Forehead lines -->
-        <line x1="100" y1="82" x2="200" y2="82" stroke="#0a0a0a" stroke-width="0.5" opacity="0.3"/>
-        <line x1="100" y1="88" x2="200" y2="88" stroke="#0a0a0a" stroke-width="0.5" opacity="0.3"/>
-
-        <!-- Left eye -->
-        <g class="eye-group" id="leftEyeGroup">
-          <rect x="110" y="110" width="36" height="40" rx="6" stroke="#0a0a0a" stroke-width="1.5" fill="none"/>
-          <circle class="eye-pupil" cx="128" cy="130" r="6" fill="#0a0a0a"/>
-        </g>
-
-        <!-- Right eye -->
-        <g class="eye-group" id="rightEyeGroup">
-          <rect x="154" y="110" width="36" height="40" rx="6" stroke="#0a0a0a" stroke-width="1.5" fill="none"/>
-          <circle class="eye-pupil" cx="172" cy="130" r="6" fill="#0a0a0a"/>
-        </g>
-
-        <!-- Eyebrows -->
-        <line x1="108" y1="106" x2="148" y2="102" stroke="#0a0a0a" stroke-width="1.5"/>
-        <line x1="152" y1="102" x2="192" y2="106" stroke="#0a0a0a" stroke-width="1.5"/>
-
-        <!-- Mouth -->
-        <g id="mouthGroup">
-          <rect x="124" y="185" width="52" height="14" rx="7" stroke="#0a0a0a" stroke-width="1.5" fill="none"/>
-          <rect x="134" y="189" width="32" height="6" rx="3" fill="#0a0a0a" opacity="0.8"/>
-        </g>
-
-        <!-- Cheek accents -->
-        <line x1="90" y1="150" x2="98" y2="150" stroke="#0a0a0a" stroke-width="0.8" opacity="0.3"/>
-        <line x1="90" y1="155" x2="98" y2="155" stroke="#0a0a0a" stroke-width="0.8" opacity="0.3"/>
-        <line x1="202" y1="150" x2="210" y2="150" stroke="#0a0a0a" stroke-width="0.8" opacity="0.3"/>
-        <line x1="202" y1="155" x2="210" y2="155" stroke="#0a0a0a" stroke-width="0.8" opacity="0.3"/>
-
-        <!-- Neck -->
-        <rect x="130" y="240" width="40" height="20" rx="2" stroke="#0a0a0a" stroke-width="1.5" fill="none"/>
-
-        <!-- Chest lines -->
-        <line x1="60" y1="275" x2="240" y2="275" stroke="#0a0a0a" stroke-width="0.5" opacity="0.2"/>
-        <line x1="60" y1="285" x2="240" y2="285" stroke="#0a0a0a" stroke-width="0.5" opacity="0.2"/>
-
-        <!-- Shoulder accents -->
-        <rect x="55" y="260" width="10" height="3" rx="1.5" fill="#facc15"/>
-        <rect x="235" y="260" width="10" height="3" rx="1.5" fill="#facc15"/>
-      </svg>
-
-      <div class="voice-waves" id="voiceWaves">
-        <div class="voice-wave"></div><div class="voice-wave"></div><div class="voice-wave"></div>
-        <div class="voice-wave"></div><div class="voice-wave"></div><div class="voice-wave"></div>
-        <div class="voice-wave"></div><div class="voice-wave"></div><div class="voice-wave"></div>
-        <div class="voice-wave"></div><div class="voice-wave"></div><div class="voice-wave"></div>
-        <div class="voice-wave"></div>
-      </div>
-    </div>
-
-    <div class="ariana-name"><span>Ari</span>ana</div>
-    <div class="ariana-subtitle">Ses Asistanı</div>
-
-    <div class="transcript-box" id="transcriptBox">
-      <div class="listening-indicator">
-        <span class="status-dot active" style="display:inline-block"></span>
-        Dinliyorum...
-      </div>
-      <div class="transcript-text">
-        <span class="transcript-placeholder">"Merhaba, benimle konuşabilirsin."</span>
-        <span class="transcript-message" id="transcriptMessage"></span>
-      </div>
-    </div>
-
-    <button class="mic-button" id="micButton" aria-label="Mikrofon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="9" y="2" width="6" height="12" rx="3"/>
-        <path d="M5 10a7 7 0 0 0 14 0"/>
-        <line x1="12" y1="19" x2="12" y2="22"/>
-        <line x1="8" y1="22" x2="16" y2="22"/>
-      </svg>
-    </button>
-
-    <div class="interaction-hints">
-      <button class="hint-btn" data-command="saat">Saat</button>
-      <button class="hint-btn" data-command="tarih">Tarih</button>
-      <button class="hint-btn" data-command="nasilsin">Nasılsın</button>
-      <button class="hint-btn" data-command="kimsin">Kimsin</button>
-      <button class="hint-btn primary" id="listenBtn">Sürekli Dinle</button>
-    </div>
-  </div>
-</main>
-
-<footer class="footer">Ariana &mdash; 7/24 Ses Asistanı</footer>
-
-<script>
-// CLOCK
-const dateDisplay = document.getElementById('dateDisplay');
-const timeDisplay = document.getElementById('timeDisplay');
-const days = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
-const months = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
-
-function updateClock() {
-  const now = new Date();
-  const h = String(now.getHours()).padStart(2, '0');
-  const m = String(now.getMinutes()).padStart(2, '0');
-  timeDisplay.innerHTML = `<span>${h}</span>:${m}`;
-  dateDisplay.textContent = `${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}, ${days[now.getDay()]}`;
-}
-updateClock();
-setInterval(updateClock, 1000);
-
-// EYE TRACKING
-const robotContainer = document.getElementById('robotContainer');
-const pupils = document.querySelectorAll('.eye-pupil');
-
-robotContainer.addEventListener('mousemove', e => {
-  const rect = robotContainer.getBoundingClientRect();
-  const cx = rect.left + rect.width / 2;
-  const cy = rect.top + rect.height / 2;
-  const dx = (e.clientX - cx) / (rect.width / 2);
-  const dy = (e.clientY - cy) / (rect.height / 2);
-  const maxMove = 4;
-  pupils.forEach(p => {
-    const origX = parseFloat(p.getAttribute('data-ox') || p.getAttribute('cx'));
-    const origY = parseFloat(p.getAttribute('data-oy') || p.getAttribute('cy'));
-    if (!p.hasAttribute('data-ox')) {
-      p.setAttribute('data-ox', p.getAttribute('cx'));
-      p.setAttribute('data-oy', p.getAttribute('cy'));
-    }
-    p.setAttribute('cx', origX + dx * maxMove);
-    p.setAttribute('cy', origY + dy * maxMove);
-  });
-});
-
-robotContainer.addEventListener('mouseleave', () => {
-  pupils.forEach(p => {
-    const ox = p.getAttribute('data-ox');
-    const oy = p.getAttribute('data-oy');
-    if (ox) p.setAttribute('cx', ox);
-    if (oy) p.setAttribute('cy', oy);
-  });
-});
-
-// VOICE / SPEECH
-const transcriptBox = document.getElementById('transcriptBox');
-const transcriptMessage = document.getElementById('transcriptMessage');
-const micButton = document.getElementById('micButton');
-const statusText = document.getElementById('statusText');
-const statusDot = document.getElementById('statusDot');
-const voiceWaves = document.getElementById('voiceWaves');
-
-let isListening = false;
-let isContinuousListening = false;
-let recognition = null;
-const synthesis = window.speechSynthesis;
-
-function initSpeech() {
-  if (recognition) return true;
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) {
-    transcriptMessage.textContent = 'Ses tanima desteklenmiyor.';
-    micButton.style.display = 'none';
-    return false;
-  }
-  recognition = new SR();
-  recognition.lang = 'tr-TR';
-  recognition.interimResults = true;
-  recognition.continuous = true;
-  recognition.maxAlternatives = 1;
-  recognition.onresult = handleResult;
-  recognition.onerror = handleError;
-  recognition.onend = handleEnd;
-  return true;
-}
-
-function handleResult(e) {
-  let final = '', interim = '';
-  for (let i = e.resultIndex; i < e.results.length; i++) {
-    if (e.results[i].isFinal) final += e.results[i][0].transcript;
-    else interim += e.results[i][0].transcript;
-  }
-  const text = final || interim;
-  if (text) {
-    transcriptMessage.textContent = text;
-    transcriptBox.classList.add('active');
-    document.querySelector('.transcript-placeholder').style.display = 'none';
-  }
-  if (final) processCommand(final.toLowerCase().trim());
-}
-
-function handleError(e) {
-  if (e.error === 'no-speech' || e.error === 'aborted') return;
-  stopListening();
-  if (isContinuousListening) setTimeout(startListening, 300);
-}
-
-function handleEnd() {
-  if (isListening && isContinuousListening) {
-    setTimeout(() => { if (isContinuousListening) startListening(); }, 200);
-  } else if (isListening) {
-    stopListening();
-  }
-}
-
-function startListening() {
-  if (!recognition && !initSpeech()) return;
-  try {
-    recognition.start();
-    isListening = true;
-    micButton.classList.add('listening');
-    statusDot.classList.add('active');
-    statusText.textContent = 'Dinliyor';
-    voiceWaves.classList.add('active');
-    transcriptBox.classList.add('listening');
-    document.querySelector('.transcript-placeholder').textContent = 'Dinliyorum...';
-  } catch (e) {}
-}
-
-function stopListening() {
-  isListening = false;
-  micButton.classList.remove('listening');
-  statusDot.classList.remove('active');
-  statusText.textContent = isContinuousListening ? 'Dinleme Aktif' : 'Beklemede';
-  voiceWaves.classList.remove('active');
-  transcriptBox.classList.remove('listening');
-  const ph = document.querySelector('.transcript-placeholder');
-  if (ph.textContent === 'Dinliyorum...') ph.textContent = '"Merhaba, benimle konuşabilirsin."';
-  if (recognition) { try { recognition.abort(); } catch(e) {} recognition = null; }
-}
-
-function toggleListening() {
-  isListening ? stopListening() : startListening();
-}
-
-function toggleContinuous() {
-  isContinuousListening = !isContinuousListening;
-  const btn = document.getElementById('listenBtn');
-  if (isContinuousListening) {
-    btn.textContent = 'Durdur';
-    btn.classList.add('primary');
-    statusText.textContent = '7/24 Aktif';
-    if (!isListening) startListening();
-  } else {
-    btn.textContent = 'Sürekli Dinle';
-    statusText.textContent = 'Beklemede';
-    if (isListening) stopListening();
-  }
-}
-
-function speak(text) {
-  if (!synthesis) return;
-  window.speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = 'tr-TR';
-  u.rate = 0.95;
-  u.pitch = 1.1;
-  statusText.textContent = 'Konuşuyor';
-  voiceWaves.classList.add('active');
-  u.onend = () => {
-    statusText.textContent = isListening || isContinuousListening ? 'Dinliyor' : 'Beklemede';
-    if (!isListening && !isContinuousListening) voiceWaves.classList.remove('active');
-  };
-  u.onerror = () => {
-    statusText.textContent = isContinuousListening ? '7/24 Aktif' : 'Beklemede';
-    voiceWaves.classList.remove('active');
-  };
-  synthesis.speak(u);
-}
-
-const responses = {
-  saat: `Saat ${String(new Date().getHours()).padStart(2, '0')}:${String(new Date().getMinutes()).padStart(2, '0')}.`,
-  tarih: () => { const n = new Date(); return `${n.getDate()} ${months[n.getMonth()]} ${n.getFullYear()}, ${days[n.getDay()]}.`; },
-  nasilsin: 'Harikayim! Seni duymak cok guzel.',
-  kimsin: 'Ben Ariana. Seninle konusmak icin buradayim.',
-  merhaba: 'Merhaba! Seni dinliyorum.'
-};
-
-function processCommand(text) {
-  let reply = null;
-  if (/saat/.test(text)) reply = responses.saat;
-  else if (/tarih/.test(text)) reply = responses.tarih();
-  else if (/nas(l|ı)ls[ıi]n/.test(text)) reply = responses.nasilsin;
-  else if (/kimsin/.test(text)) reply = responses.kimsin;
-  else if (/merhaba|selam/.test(text)) reply = responses.merhaba;
-  else if (text.length > 2) reply = `"${text}" dedin. Anladim.`;
-
-  if (reply) {
-    transcriptMessage.textContent = typeof reply === 'function' ? reply() : reply;
-    transcriptBox.classList.add('active');
-    document.querySelector('.transcript-placeholder').style.display = 'none';
-    speak(typeof reply === 'function' ? reply() : reply);
-  }
-}
-
-// EVENTS
-if (initSpeech()) micButton.addEventListener('click', toggleListening);
-
-document.querySelectorAll('.hint-btn[data-command]').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const cmd = btn.dataset.command;
-    const reply = typeof responses[cmd] === 'function' ? responses[cmd]() : responses[cmd];
-    if (reply) {
-      transcriptMessage.textContent = reply;
-      transcriptBox.classList.add('active');
-      document.querySelector('.transcript-placeholder').style.display = 'none';
-      speak(reply);
-    }
-  });
-});
-
-document.getElementById('listenBtn').addEventListener('click', toggleContinuous);
-
-robotContainer.addEventListener('click', () => {
-  const msg = 'Efendim?';
-  transcriptMessage.textContent = msg;
-  transcriptBox.classList.add('active');
-  document.querySelector('.transcript-placeholder').style.display = 'none';
-  speak(msg);
-});
-</script>
+<div class="pulse-dot pulse-dot-1"></div>
+<div class="pulse-dot pulse-dot-2"></div>
+<div class="pulse-dot pulse-dot-3"></div>
 </body>
 </html>
