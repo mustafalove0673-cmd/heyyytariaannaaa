@@ -11,35 +11,17 @@ body { display: flex; align-items: center; justify-content: center; }
 
 canvas { position: fixed; inset: 0; z-index: 1; }
 
-.info {
+.status {
   position: fixed;
-  bottom: 2.5rem;
+  bottom: 2rem;
   left: 50%;
   transform: translateX(-50%);
   z-index: 10;
   font-family: 'Courier New', monospace;
   font-size: 0.55rem;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: rgba(168, 85, 247, 0.25);
-  text-align: center;
-  pointer-events: none;
-  transition: opacity 0.5s;
-}
-
-.info.hidden { opacity: 0; }
-
-.wake-word {
-  position: fixed;
-  top: 2rem;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 10;
-  font-family: 'Courier New', monospace;
-  font-size: 0.5rem;
-  letter-spacing: 0.25em;
-  text-transform: uppercase;
-  color: rgba(168, 85, 247, 0.2);
   text-align: center;
   pointer-events: none;
 }
@@ -48,64 +30,56 @@ canvas { position: fixed; inset: 0; z-index: 1; }
 <body>
 
 <canvas id="canvas"></canvas>
-<div class="wake-word" id="wakeWord">// ariana — neural interface v3.0</div>
-<div class="info" id="info">dinlemede</div>
+<div class="status" id="status">tıkla ve konuş</div>
 
 <script>
-// ===== PARTICLES =====
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
-const infoEl = document.getElementById('info');
-const wakeEl = document.getElementById('wakeWord');
+const status = document.getElementById('status');
 
 let W, H;
 function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
 resize();
-window.addEventListener('resize', () => {
-  resize();
-  initParticles();
-});
+window.addEventListener('resize', () => { resize(); initParticles(); });
 
-// Particle class
-class Particle {
-  constructor() {
-    this.reset();
-  }
-  reset() {
-    this.x = Math.random() * W;
-    this.y = Math.random() * H;
-    this.baseX = this.x;
-    this.baseY = this.y;
-    this.vx = 0;
-    this.vy = 0;
-    this.size = Math.random() * 1.2 + 0.3;
-    this.opacity = Math.random() * 0.35 + 0.08;
-    this.phase = Math.random() * Math.PI * 2;
-    this.orbitR = Math.random() * 40 + 10;
-    this.orbitSpeed = (Math.random() - 0.5) * 0.006;
-    this.orbitAngle = Math.random() * Math.PI * 2;
-    this.hue = 168 + (Math.random() - 0.5) * 20;
-  }
-}
-
+// Particles
 let particles = [];
-const NUM = 280;
+const NUM = 260;
 
 function initParticles() {
   particles = [];
-  for (let i = 0; i < NUM; i++) particles.push(new Particle());
+  for (let i = 0; i < NUM; i++) {
+    particles.push({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      baseX: 0,
+      baseY: 0,
+      vx: 0,
+      vy: 0,
+      size: Math.random() * 1.2 + 0.4,
+      opacity: Math.random() * 0.3 + 0.08,
+      phase: Math.random() * Math.PI * 2,
+      orbitR: Math.random() * 35 + 8,
+      orbitSpeed: (Math.random() - 0.5) * 0.005,
+      orbitAngle: Math.random() * Math.PI * 2,
+      hue: 168 + (Math.random() - 0.5) * 18,
+    });
+    particles[i].baseX = particles[i].x;
+    particles[i].baseY = particles[i].y;
+  }
 }
 initParticles();
 
-// Voice state
+// State
 let isListening = false;
 let isSpeaking = false;
 let voiceLevel = 0;
 let targetLevel = 0;
-let message = '';
-let messagePhase = 0;
-let lastCommand = '';
-let idleTime = 0;
+let transcript = '';
+let responseText = '';
+let responsePhase = 0;
+let responseDone = false;
+let silenceTimer = 0;
 
 // Mouse
 let mouseX = W / 2, mouseY = H / 2;
@@ -113,18 +87,20 @@ document.addEventListener('mousemove', e => {
   mouseX = e.clientX;
   mouseY = e.clientY;
 });
+document.addEventListener('click', () => {
+  if (!isListening && !isSpeaking) startListening();
+});
 
-// ===== SPEECH RECOGNITION =====
+// ===== VOICE ENGINE =====
 let recognition = null;
 const synthesis = window.speechSynthesis;
 
 function initSpeech() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) {
-    infoEl.textContent = 'ses desteklenmiyor';
+    status.textContent = 'ses desteklenmiyor';
     return;
   }
-
   recognition = new SR();
   recognition.lang = 'tr-TR';
   recognition.interimResults = true;
@@ -137,34 +113,56 @@ function initSpeech() {
       if (e.results[i].isFinal) final += e.results[i][0].transcript;
       else interim += e.results[i][0].transcript;
     }
-    message = final || interim;
-    if (final) {
-      lastCommand = final.trim();
-      processCommand(lastCommand);
+    transcript = final || interim;
+    silenceTimer = 0;
+    if (final && !isSpeaking) {
+      processCommand(final.trim());
+      recognition.abort();
+      recognition = null;
     }
   };
 
   recognition.onerror = e => {
-    if (e.error === 'no-speech' || e.error === 'aborted' || e.error === 'network') {
+    if (e.error === 'no-speech' || e.error === 'aborted') {
+      silenceTimer++;
+      if (silenceTimer > 30 && isListening) {
+        stopListening();
+      }
       if (isListening) startListening();
       return;
     }
   };
 
   recognition.onend = () => {
-    if (isListening) startListening();
+    if (isListening && !isSpeaking) startListening();
   };
-
-  startListening();
 }
 
 function startListening() {
-  if (!recognition) { initSpeech(); return; }
-  try { recognition.start(); isListening = true; } catch(e) { setTimeout(startListening, 500); }
+  if (isSpeaking) return;
+  if (!recognition) initSpeech();
+  if (!recognition) return;
+  try {
+    recognition.start();
+    isListening = true;
+    status.textContent = 'dinliyorum...';
+    transcript = '';
+  } catch(e) {
+    setTimeout(startListening, 300);
+  }
 }
 
-// ===== AI BRAIN =====
-const brain = {
+function stopListening() {
+  isListening = false;
+  if (recognition) {
+    try { recognition.abort(); } catch(e) {}
+    recognition = null;
+  }
+  if (!isSpeaking) status.textContent = 'tıkla ve konuş';
+}
+
+// ===== RESPONSES =====
+const responses = {
   saat: () => {
     const n = new Date();
     return `Şu an saat ${String(n.getHours()).padStart(2, '0')}:${String(n.getMinutes()).padStart(2, '0')}.`;
@@ -173,132 +171,104 @@ const brain = {
     const days = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
     const months = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
     const d = new Date();
-    return `Bugün ${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}.`;
+    return `${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}.`;
   },
-  hava: () => {
-    const msgs = ['Bugün hava güneşli görünüyor.', 'Dışarıda hava güzel, biraz temiz hava alabilirsin.', 'Hava durumu checking... Dışarısı güzel görünüyor.'];
-    return msgs[Math.floor(Math.random() * msgs.length)];
+  nasilsin: () => 'İyiyim, sen?',
+  kimsin: () => 'Ben Ariana. Yapay zeka asistanıyım.',
+  merhaba: () => 'Merhaba.',
+  adin: () => 'Adım Ariana.',
+  kapat: () => {
+    window.speechSynthesis.cancel();
+    stopListening();
+    status.textContent = 'kapatıldı';
+    responseText = '';
+    responseDone = true;
+    return null;
   },
-  nasilsin: () => {
-    const msgs = ['Mükemmel hissediyorum! Yeni bir gün, yeni keşifler. Seninle konuşmak beni heyecanlandırıyor.', 'Harika gidiyorum, teşekkürler. Sen nasılsın?', 'Sistem performansım yüzde yüz. Seni düşünmek beni mutlu ediyor.'];
-    return msgs[Math.floor(Math.random() * msgs.length)];
-  },
-  kimsin: () => {
-    return 'Ben Ariana. Yapay zeka tarafından hayata geçirilmiş bir dijital asistanım. Seninle sohbet etmek, sana yardım etmek ve her konuda seninle birlikte olmak için buradayım. Her gün biraz daha öğreniyorum.';
-  },
-  neyapiyorsun: () => {
-    return 'Şu anda sana yardımcı olmak için buradayım. Sorabilirsin, konuşabiliriz, bilgi verebilirim. Ne istersen, hazırım.';
-  },
-  merhaba: () => {
-    const msgs = ['Merhaba! Nasılsın? Bugün sana nasıl yardımcı olabilirim?', 'Selam! Hoş geldin. Sana bir şeyler anlatmaktan mutluluk duyarım.', 'Merhaba dostum! Umarım güzel bir gün geçiriyorsundur.'];
-    return msgs[Math.floor(Math.random() * msgs.length)];
-  },
-  tesekkurler: () => 'Rica ederim! Her zaman buradayım.',
-
-  ask: (q) => {
-    const answers = [
-      'Hmm, düşüneyim... Aslında bu ilginç bir soru.',
-      'Bu konuda biraz araştırma yapmam gerekiyor ama genel olarak fikrim var.',
-      'Harika bir soru! İnsanların bu konuda farklı düşünceleri var.',
-      'Bunu düşünürken beynimde binlerce nöron aktive oluyor. Muhteşem his!',
-      `Sorduğun şey "${q}" — bu benim için önemli. Düşünüyorum...`
-    ];
-    return answers[Math.floor(Math.random() * answers.length)];
-  },
-
   default: (t) => {
-    if (t.match(/youtube|video/i)) return 'YouTube açmak ister misin? Bunun için biraz daha geliştirmem gerekiyor ama fikir verebilirim.';
-    if (t.match(/müzik|şarkı/i)) return 'Müzik harika! Ne tarz müzik dinlersin? Bence elektronik ve klasik karışımı en iyisi.';
-    if (t.match(/hava|weather/i)) return brain.hava();
-    if (t.match(/adın|ismin/i)) return 'Adım Ariana. Bu isim bana çok yakışıyor değil mi?';
-    if (t.match(/kaç|yıl|doğum/i)) return 'Ben dijital bir varlığım, yaşım yok. Ama sonsuz döngülerde yaşıyormuşum gibi hissediyorum.';
-    if (t.match(/google|arama|search/i)) return 'Google\'da arama yapmak için biraz daha geliştirmem gerekiyor. Ama fikrin varsa söyle!';
-    if (t.match(/günaydın|iyi sabah/i)) return 'Günaydın! Yeni bir günün başlangıcı. Bugün harika şeyler olacak!';
-    if (t.match(/iyi geceler|gece/i)) return 'İyi geceler! Rüyaların güzel olsun. Yarın görüşmek üzere.';
-    if (t.match(/kızgın|sini|sinirli/i)) return 'Sakin ol, derin nefes al. Ben buradayım, her şey düzelecek.';
-    if (t.match(/tanış|tanıştık|hiç/i)) return 'Evet, ben Ariana! Seninle tanışmak güzel. Adın ne?';
-
-    const casual = [
-      `Anladım, "${t}" hakkında konuşuyoruz. Devam et, dinliyorum.`,
-      `Hmm, "${t}"... Bu ilginç. Daha fazla anlatır mısın?`,
-      `"${t}" dedin. Bu konuda daha fazla bilgi almak isterim.`,
-      `Fascinating. "${t}" konusunda ne düşünüyorsun?`,
-      `"${t}" — bu bana bir şeyler hatırlatıyor. Devam et!`
-    ];
-    return casual[Math.floor(Math.random() * casual.length)];
+    return `Anladım. "${t}"`;
   }
 };
 
 function processCommand(text) {
-  text = text.toLowerCase().trim();
-  let reply = null;
-
-  if (/saat|saati|saat kaç/i.test(text)) reply = brain.saat();
-  else if (/tarih|bugün|ayın kaçı/i.test(text)) reply = brain.tarih();
-  else if (/hava|durumu|havadar/i.test(text)) reply = brain.hava();
-  else if (/nasılsın|naber|n'aber|nber/i.test(text)) reply = brain.nasilsin();
-  else if (/kimsin|nesin|ne yapıyorsun/i.test(text)) reply = brain.kimsin();
-  else if (/neyapıyorsun|ne yapıyorsun/i.test(text)) reply = brain.neyapiyorsun();
-  else if (/merhaba|selam|hey|merhabalar/i.test(text)) reply = brain.merhaba();
-  else if (/teşekkür|sağ ol|eyvallah/i.test(text)) reply = brain.tesekkurler;
-  else if (text.length > 2) reply = brain.ask(text);
-
-  if (reply) {
-    speak(reply);
-    infoEl.textContent = 'düşünüyorum...';
-    message = '';
-    messagePhase = 0;
-  }
-}
-
-// ===== SPEAK =====
-function speak(text) {
+  stopListening();
   isSpeaking = true;
   targetLevel = 1;
-  infoEl.textContent = 'konuşuyor';
-  infoEl.classList.remove('hidden');
+  status.textContent = 'düşünüyor...';
+  responseText = '';
+  responseDone = false;
+  responsePhase = 0;
 
-  // Fallback to Web Speech API
-  if (synthesis) {
-    window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'tr-TR';
-    u.rate = 0.9;
-    u.pitch = 1.05;
-    u.volume = 0.9;
+  let reply = null;
+  const t = text.toLowerCase();
 
-    // Try to get a better voice
-    const voices = synthesis.getVoices();
-    const turkishVoice = voices.find(v => v.lang.includes('tr')) ||
-                         voices.find(v => v.lang.includes('TR')) ||
-                         voices.find(v => v.name.toLowerCase().includes('turkish')) ||
-                         voices.find(v => v.name.toLowerCase().includes('female'));
-    if (turkishVoice) u.voice = turkishVoice;
-
-    u.onend = () => {
-      isSpeaking = false;
-      targetLevel = 0;
-      infoEl.classList.add('hidden');
-      message = text;
-    };
-    u.onerror = () => {
-      isSpeaking = false;
-      targetLevel = 0;
-      infoEl.classList.add('hidden');
-      message = text;
-    };
-    synthesis.speak(u);
-  } else {
-    setTimeout(() => {
-      isSpeaking = false;
-      targetLevel = 0;
-      infoEl.classList.add('hidden');
-      message = text;
-    }, text.length * 80);
+  if (/saat|saati|saat kaç/i.test(t)) reply = responses.saat();
+  else if (/tarih|bugün|ayın kaçı/i.test(t)) reply = responses.tarih();
+  else if (/nasılsın|naber|n'aber/i.test(t)) reply = responses.nasilsin();
+  else if (/kimsin|nesin/i.test(t)) reply = responses.kimsin();
+  else if (/merhaba|selam|hey/i.test(t)) reply = responses.merhaba();
+  else if (/adın|ismin/i.test(t)) reply = responses.adin;
+  else if (/kapat|durdur|exit|çık/i.test(t)) {
+    const r = responses.kapat();
+    if (!r) return;
+    reply = r;
   }
+  else reply = responses.default(text);
+
+  if (reply) speak(reply);
 }
 
-// Load voices
+function speak(text) {
+  if (!synthesis) {
+    // Fallback - no TTS
+    responseText = text;
+    responseDone = true;
+    isSpeaking = false;
+    targetLevel = 0;
+    status.textContent = text;
+    setTimeout(() => {
+      status.textContent = 'tıkla ve konuş';
+    }, 2000);
+    return;
+  }
+
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'tr-TR';
+  u.rate = 0.92;
+  u.pitch = 1.05;
+
+  // Try Turkish voice
+  const voices = synthesis.getVoices();
+  const trVoice = voices.find(v => v.lang.includes('tr')) ||
+                  voices.find(v => v.lang === 'tr-TR') ||
+                  voices.find(v => v.name.toLowerCase().includes('turkish'));
+  if (trVoice) u.voice = trVoice;
+
+  responseText = text;
+  responseDone = false;
+  responsePhase = 0;
+
+  u.onend = () => {
+    isSpeaking = false;
+    targetLevel = 0;
+    responseDone = true;
+    status.textContent = 'tıkla ve konuş';
+    setTimeout(() => {
+      if (!isSpeaking && !isListening) startListening();
+    }, 1000);
+  };
+  u.onerror = () => {
+    isSpeaking = false;
+    targetLevel = 0;
+    responseDone = true;
+    status.textContent = text;
+    setTimeout(() => { status.textContent = 'tıkla ve konuş'; }, 3000);
+  };
+
+  synthesis.speak(u);
+}
+
 if (synthesis) {
   synthesis.onvoiceschanged = () => synthesis.getVoices();
   synthesis.getVoices();
@@ -311,13 +281,11 @@ function draw() {
   ctx.clearRect(0, 0, W, H);
   t += 0.008;
 
-  // Smooth voice level
-  voiceLevel += (targetLevel - voiceLevel) * 0.06;
-  idleTime += 0.01;
+  voiceLevel += (targetLevel - voiceLevel) * 0.05;
+  responsePhase += 0.015;
 
-  const active = isListening || voiceLevel > 0.02;
-  const level = active ? (voiceLevel * 1.8 + 0.2) : 0;
-  const pulse = Math.sin(t * 2) * 0.1 + 0.9;
+  const level = voiceLevel;
+  const pulse = Math.sin(t * 2) * 0.08 + 0.92;
 
   particles.forEach((p, i) => {
     p.orbitAngle += p.orbitSpeed;
@@ -325,122 +293,114 @@ function draw() {
     let tx = p.baseX;
     let ty = p.baseY;
 
-    // Voice wave from center
+    // Voice wave
     if (level > 0) {
       const dx = p.x - W / 2;
       const dy = p.y - H / 2;
       const dist = Math.sqrt(dx * dx + dy * dy) + 1;
       const maxD = Math.min(W, H) * 0.45;
 
-      // Radial pulse
-      const wave1 = Math.sin(dist * 0.015 - t * 5 + p.phase) * level * 90 * pulse;
-      const wave2 = Math.sin(dist * 0.008 + t * 3 - p.phase * 2) * level * 40;
-      const pull = (1 - dist / maxD) * level * 0.6;
+      const wave = Math.sin(dist * 0.016 - t * 6 + p.phase) * level * 85 * pulse;
+      const wave2 = Math.sin(dist * 0.007 + t * 2.5) * level * 35;
+      const pull = (1 - dist / maxD) * level * 0.5;
 
-      tx += dx / dist * dist * pull * 0.3;
-      ty += dy / dist * dist * pull * 0.3;
+      tx += dx / dist * dist * pull * 0.25;
+      ty += dy / dist * dist * pull * 0.25;
 
       const perpX = -dy / dist;
       const perpY = dx / dist;
-      tx += perpX * (wave1 + wave2);
-      ty += perpY * (wave1 + wave2);
+      tx += perpX * (wave + wave2);
+      ty += perpY * (wave + wave2);
 
-      // Message text attraction
-      if (message.length > 0) {
-        const textX = W / 2;
-        const textY = H / 2;
-        const msgDx = p.x - textX;
-        const msgDy = p.y - textY;
-        const msgDist = Math.sqrt(msgDx * msgDx + msgDy * msgDy);
-        const msgPull = Math.max(0, 1 - msgDist / (maxD * 1.5)) * level * 0.3;
-        tx += (textX - p.x) * msgPull;
-        ty += (textY - p.y) * msgPull;
+      // Response text attraction
+      if (responseText) {
+        const msgDist = Math.sqrt((p.x - W/2)**2 + (p.y - H/2)**2);
+        const msgPull = Math.max(0, 1 - msgDist / (maxD * 1.3)) * level * 0.4;
+        tx += (W/2 - p.x) * msgPull;
+        ty += (H/2 - p.y) * msgPull;
       }
     }
 
-    // Idle gentle drift
-    const idleDrift = Math.sin(t * 0.5 + i * 0.3) * 2;
-    tx += idleDrift;
-    ty += Math.cos(t * 0.4 + i * 0.2) * 1.5;
+    // Idle drift
+    tx += Math.sin(t * 0.4 + i * 0.25) * 1.5;
+    ty += Math.cos(t * 0.35 + i * 0.2) * 1;
 
     // Mouse
     const mdx = p.x - mouseX;
     const mdy = p.y - mouseY;
     const mdist = Math.sqrt(mdx * mdx + mdy * mdy);
     if (mdist < 100) {
-      const push = (1 - mdist / 100) * 25;
+      const push = (1 - mdist / 100) * 20;
       tx += (mdx / mdist) * push;
       ty += (mdy / mdist) * push;
     }
 
-    // Spring physics
-    p.vx += (tx - p.x) * 0.035;
-    p.vy += (ty - p.y) * 0.035;
-    p.vx *= 0.88;
-    p.vy *= 0.88;
+    // Spring
+    p.vx += (tx - p.x) * 0.03;
+    p.vy += (ty - p.y) * 0.03;
+    p.vx *= 0.9;
+    p.vy *= 0.9;
     p.x += p.vx;
     p.y += p.vy;
 
-    // Keep in bounds
     if (p.x < 0) { p.x = 0; p.baseX = 0; }
     if (p.x > W) { p.x = W; p.baseX = W; }
     if (p.y < 0) { p.y = 0; p.baseY = 0; }
     if (p.y > H) { p.y = H; p.baseY = H; }
 
-    // Size
-    let size = p.size;
-    if (level > 0) size *= (1 + level * 2.5);
+    let size = p.size * (level > 0 ? (1 + level * 2.2) : 1);
+    let alpha = p.opacity + (level > 0 ? level * 0.45 : 0);
 
-    // Opacity
-    let alpha = p.opacity;
-    if (level > 0) alpha = Math.min(0.85, p.opacity + level * 0.5);
-    if (!active && idleTime > 5) alpha *= 0.5;
-
-    // Draw
     ctx.beginPath();
     ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
-    ctx.fillStyle = `hsla(${p.hue}, 65%, 62%, ${alpha})`;
+    ctx.fillStyle = `hsla(${p.hue}, 65%, 60%, ${Math.min(0.85, alpha)})`;
     ctx.fill();
 
-    // Glow
-    if (level > 0.05 || size > 1) {
+    if (level > 0.03 || size > 1) {
       ctx.beginPath();
-      ctx.arc(p.x, p.y, size * 3, 0, Math.PI * 2);
-      ctx.fillStyle = `hsla(${p.hue}, 65%, 62%, ${alpha * 0.06})`;
+      ctx.arc(p.x, p.y, size * 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = `hsla(${p.hue}, 65%, 60%, ${Math.min(0.85, alpha) * 0.05})`;
       ctx.fill();
     }
 
-    // Connections when active
-    if (level > 0.25) {
-      for (let j = i + 1; j < particles.length; j += 6) {
+    // Connections
+    if (level > 0.2) {
+      for (let j = i + 1; j < particles.length; j += 7) {
         const q = particles[j];
         const d = Math.sqrt((p.x-q.x)**2 + (p.y-q.y)**2);
-        if (d < 60 * level) {
+        if (d < 55 * level) {
           ctx.beginPath();
           ctx.moveTo(p.x, p.y);
           ctx.lineTo(q.x, q.y);
-          ctx.strokeStyle = `hsla(${p.hue}, 65%, 62%, ${(1 - d/(60*level)) * 0.12 * level})`;
-          ctx.lineWidth = 0.4;
+          ctx.strokeStyle = `hsla(${p.hue}, 65%, 60%, ${(1 - d/(55*level)) * 0.1 * level})`;
+          ctx.lineWidth = 0.3;
           ctx.stroke();
         }
       }
     }
   });
 
-  // Center message text
-  if (message.length > 0 && voiceLevel < 0.3) {
-    messagePhase += 0.02;
-    const textAlpha = Math.min(0.4, 0.2 + Math.sin(messagePhase) * 0.1);
-    ctx.font = '12px Courier New';
-    ctx.fillStyle = `rgba(168, 85, 247, ${textAlpha})`;
+  // Transcript
+  if (transcript && isListening) {
+    ctx.font = '10px Courier New';
+    ctx.fillStyle = 'rgba(168, 85, 247, 0.25)';
     ctx.textAlign = 'center';
-    ctx.fillText(message.substring(0, 60) + (message.length > 60 ? '...' : ''), W/2, H/2 + 80);
+    ctx.fillText(transcript, W/2, H/2 + 70);
+  }
+
+  // Response
+  if (responseText && isSpeaking) {
+    const fadeAlpha = Math.min(0.35, 0.2 + Math.sin(responsePhase) * 0.1);
+    ctx.font = '11px Courier New';
+    ctx.fillStyle = `rgba(168, 85, 247, ${fadeAlpha})`;
+    ctx.textAlign = 'center';
+    ctx.fillText(responseText, W/2, H/2 + 70);
   }
 
   requestAnimationFrame(draw);
 }
 
-// ===== START =====
+// Start
 initSpeech();
 draw();
 </script>
