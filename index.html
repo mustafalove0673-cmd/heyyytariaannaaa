@@ -25,24 +25,37 @@ canvas { position: fixed; inset: 0; z-index: 1; }
   text-align: center;
   pointer-events: none;
 }
+
+.api-status {
+  position: fixed;
+  top: 1.5rem;
+  right: 1.5rem;
+  z-index: 10;
+  font-family: 'Courier New', monospace;
+  font-size: 0.5rem;
+  letter-spacing: 0.15em;
+  color: rgba(168, 85, 247, 0.2);
+  pointer-events: none;
+}
 </style>
 </head>
 <body>
 
 <canvas id="canvas"></canvas>
 <div class="status" id="status">tıkla ve konuş</div>
+<div class="api-status" id="apiStatus"></div>
 
 <script>
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
-const status = document.getElementById('status');
+const statusEl = document.getElementById('status');
+const apiStatus = document.getElementById('apiStatus');
 
 let W, H;
 function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
 resize();
 window.addEventListener('resize', () => { resize(); initParticles(); });
 
-// Particles
 let particles = [];
 const NUM = 260;
 
@@ -68,7 +81,6 @@ function initParticles() {
 }
 initParticles();
 
-// State
 let isListening = false;
 let isSpeaking = false;
 let voiceLevel = 0;
@@ -76,29 +88,24 @@ let targetLevel = 0;
 let transcript = '';
 let responseText = '';
 let silenceFrames = 0;
-const SILENCE_THRESHOLD = 20;
-let interactionActive = false;
+const SILENCE_THRESHOLD = 60;
+let autoStarted = false;
 
-// Mouse
 let mouseX = W / 2, mouseY = H / 2;
 document.addEventListener('mousemove', e => {
   mouseX = e.clientX;
   mouseY = e.clientY;
 });
 document.addEventListener('click', () => {
-  if (!isListening && !isSpeaking) {
-    startListening();
-  }
+  if (!isListening && !isSpeaking) startListening();
 });
 
-// ===== VOICE ENGINE =====
 let recognition = null;
 let currentTranscript = '';
-const synthesis = window.speechSynthesis;
 
 function initSpeech() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) { status.textContent = 'ses desteklenmiyor'; return; }
+  if (!SR) { statusEl.textContent = 'ses desteklenmiyor'; return; }
   recognition = new SR();
   recognition.lang = 'tr-TR';
   recognition.interimResults = true;
@@ -130,9 +137,7 @@ function initSpeech() {
   recognition.onerror = e => {
     if (e.error === 'no-speech') {
       silenceFrames++;
-      if (silenceFrames > SILENCE_THRESHOLD && isListening) {
-        stopListening();
-      }
+      if (silenceFrames > SILENCE_THRESHOLD && isListening) stopListening();
       return;
     }
     if (e.error === 'aborted') return;
@@ -149,14 +154,13 @@ function startListening() {
   currentTranscript = '';
   transcript = '';
   silenceFrames = 0;
-
   if (!recognition) initSpeech();
   if (!recognition) return;
-
   try {
     recognition.start();
     isListening = true;
-    status.textContent = 'dinliyorum...';
+    statusEl.textContent = 'dinliyorum...';
+    apiStatus.textContent = '';
   } catch(e) {
     setTimeout(startListening, 400);
   }
@@ -169,130 +173,86 @@ function stopListening() {
   }
 }
 
-// ===== RESPONSES =====
-function processCommand(text) {
+let currentAudio = null;
+
+async function processCommand(text) {
   isSpeaking = true;
   targetLevel = 1;
-  status.textContent = 'cevap veriyor';
+  statusEl.textContent = 'düşünüyor...';
   responseText = '';
-  interactionActive = true;
+  apiStatus.textContent = 'ai · groq';
 
-  const t = text.toLowerCase();
+  try {
+    const resp = await fetch('http://localhost:5001/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text })
+    });
+    const data = await resp.json();
+    const reply = data.reply || 'Tamam.';
 
-  // Exact match — no guessing
-  let reply = null;
-
-  // Saat
-  if (/saat/.test(t) && t.length < 15) {
-    const n = new Date();
-    reply = `${String(n.getHours()).padStart(2, '0')}:${String(n.getMinutes()).padStart(2, '0')}`;
-  }
-  // Tarih
-  else if (/tarih|bugün/.test(t) && t.length < 15) {
-    const days = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
-    const months = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
-    const n = new Date();
-    reply = `${n.getDate()} ${months[n.getMonth()]} ${n.getFullYear()} ${days[n.getDay()]}`;
-  }
-  // Nasılsın
-  else if (/nasılsın|naber|n.aber/.test(t)) {
-    reply = 'İyiyim, sen nasılsın?';
-  }
-  // Kimsin
-  else if (/kimsin|nesin/.test(t)) {
-    reply = 'Ben Ariana, yapay zeka asistanıyım.';
-  }
-  // Merhaba
-  else if (/merhaba|selam|hey/.test(t)) {
-    reply = 'Merhaba.';
-  }
-  // Adın
-  else if (/adın|ismin/.test(t)) {
-    reply = 'Adım Ariana.';
-  }
-  // Teşekkür
-  else if (/teşekkür|sağ ol/.test(t)) {
-    reply = 'Rica ederim.';
-  }
-  // Kapat
-  else if (/kapat|durdur/.test(t)) {
-    stopListening();
-    isSpeaking = false;
-    targetLevel = 0;
-    status.textContent = 'kapatıldı';
-    interactionActive = false;
-    responseText = '';
-    return;
-  }
-  // Bilinmeyen — sessiz kal
-  else {
-    // Bilmediğinde sadece "tamam" de
-    if (text.length > 2) {
-      reply = 'Tamam.';
-    }
-  }
-
-  if (reply) speak(reply);
-  else {
-    isSpeaking = false;
-    targetLevel = 0;
-    interactionActive = false;
-    status.textContent = 'tıkla ve konuş';
+    statusEl.textContent = 'konuşuyor';
+    responseText = reply;
+    await playAudio(reply);
+  } catch(e) {
+    statusEl.textContent = 'bağlantı hatası';
+    apiStatus.textContent = 'offline';
+    setTimeout(() => {
+      isSpeaking = false;
+      targetLevel = 0;
+      statusEl.textContent = 'tıkla ve konuş';
+    }, 2000);
   }
 }
 
-function speak(text) {
-  responseText = text;
+async function playAudio(text) {
+  try {
+    const resp = await fetch('http://localhost:5001/api/speak', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, lang: 'tr' })
+    });
+    if (!resp.ok) throw new Error('audio error');
 
-  if (!synthesis) {
-    isSpeaking = false;
-    targetLevel = 0;
-    interactionActive = false;
-    status.textContent = text;
-    setTimeout(() => { status.textContent = 'tıkla ve konuş'; }, 2500);
-    return;
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+
+    if (currentAudio) {
+      currentAudio.pause();
+      currentAudio = null;
+    }
+
+    currentAudio = new Audio(url);
+    await currentAudio.play();
+
+    currentAudio.onended = () => {
+      currentAudio = null;
+      URL.revokeObjectURL(url);
+      finishSpeaking();
+    };
+    currentAudio.onerror = () => {
+      currentAudio = null;
+      URL.revokeObjectURL(url);
+      finishSpeaking();
+    };
+  } catch(e) {
+    finishSpeaking();
   }
+}
 
-  window.speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = 'tr-TR';
-  u.rate = 0.9;
-  u.pitch = 1.05;
-
-  // Find Turkish voice
-  const voices = synthesis.getVoices();
-  const trVoice = voices.find(v => v.lang.includes('tr')) ||
-                  voices.find(v => v.lang === 'tr-TR') ||
-                  voices[0];
-  if (trVoice) u.voice = trVoice;
-
-  u.onend = () => {
-    isSpeaking = false;
-    targetLevel = 0;
-    interactionActive = false;
-    responseText = '';
-    status.textContent = 'tıkla ve konuş';
+function finishSpeaking() {
+  isSpeaking = false;
+  targetLevel = 0;
+  responseText = '';
+  statusEl.textContent = 'tıkla ve konuş';
+  apiStatus.textContent = 'groq · llama-3.3';
+  if (autoStarted) {
     setTimeout(() => {
       if (!isListening && !isSpeaking) startListening();
-    }, 500);
-  };
-  u.onerror = () => {
-    isSpeaking = false;
-    targetLevel = 0;
-    interactionActive = false;
-    status.textContent = text;
-    setTimeout(() => { status.textContent = 'tıkla ve konuş'; }, 2500);
-  };
-
-  synthesis.speak(u);
+    }, 800);
+  }
 }
 
-if (synthesis) {
-  synthesis.onvoiceschanged = () => synthesis.getVoices();
-  synthesis.getVoices();
-}
-
-// ===== DRAW =====
 let t = 0;
 let responsePhase = 0;
 
@@ -330,11 +290,9 @@ function draw() {
       ty += perpY * (wave + wave2);
     }
 
-    // Idle drift
     tx += Math.sin(t * 0.4 + i * 0.25) * 1.2;
     ty += Math.cos(t * 0.35 + i * 0.2) * 0.8;
 
-    // Mouse
     const mdx = p.x - mouseX;
     const mdy = p.y - mouseY;
     const mdist = Math.sqrt(mdx * mdx + mdy * mdy);
@@ -343,7 +301,6 @@ function draw() {
       ty += (mdy / mdist) * (1 - mdist / 90) * 18;
     }
 
-    // Spring
     p.vx += (tx - p.x) * 0.03;
     p.vy += (ty - p.y) * 0.03;
     p.vx *= 0.9;
@@ -387,7 +344,6 @@ function draw() {
     }
   });
 
-  // Show what user said
   if (transcript && isListening) {
     ctx.font = '10px Courier New';
     ctx.fillStyle = 'rgba(168, 85, 247, 0.2)';
@@ -395,7 +351,6 @@ function draw() {
     ctx.fillText(transcript, W/2, H/2 + 65);
   }
 
-  // Show response
   if (responseText && isSpeaking) {
     const a = Math.min(0.3, 0.18 + Math.sin(responsePhase) * 0.08);
     ctx.font = '11px Courier New';
@@ -408,7 +363,15 @@ function draw() {
 }
 
 initSpeech();
+apiStatus.textContent = 'groq · llama-3.3';
 draw();
+
+setTimeout(() => {
+  if (!autoStarted && !isListening && !isSpeaking) {
+    autoStarted = true;
+    startListening();
+  }
+}, 3000);
 </script>
 </body>
 </html>
